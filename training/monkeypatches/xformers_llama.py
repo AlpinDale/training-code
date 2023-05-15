@@ -41,9 +41,6 @@ def llama_attention_forward(
     key_states = key_states.transpose(1, 2)
     value_states = value_states.transpose(1, 2)
 
-    # This is a nasty hack. We know attention_mask in transformers is either
-    # LowerTriangular or all Zeros. We therefore check if one element in the
-    # upper triangular portion is zero. If it is, then the mask is all zeros.
     if attention_mask is None or torch.all(attention_mask == 0):
         attn_output = memory_efficient_attention(query_states, key_states, value_states, attn_bias=None)
     else:
