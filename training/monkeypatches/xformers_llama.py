@@ -44,11 +44,9 @@ def llama_attention_forward(
     # This is a nasty hack. We know attention_mask in transformers is either
     # LowerTriangular or all Zeros. We therefore check if one element in the
     # upper triangular portion is zero. If it is, then the mask is all zeros.
-    if attention_mask is None or attention_mask[0, 0, 0, 1] == 0:
-        # input and output should be of form (bsz, q_len, num_heads, head_dim)
+    if attention_mask is None or torch.all(attention_mask == 0):
         attn_output = memory_efficient_attention(query_states, key_states, value_states, attn_bias=None)
     else:
-        # input and output should be of form (bsz, q_len, num_heads, head_dim)
         from xformers.ops import LowerTriangularMask
         attn_output = memory_efficient_attention(query_states, key_states, value_states, attn_bias=LowerTriangularMask())
     attn_weights = None

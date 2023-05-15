@@ -6,7 +6,7 @@ import multiprocessing
 import pandas as pd
 import pyarrow as pa
 import numpy as np
-from parallel_pandas import ParallelPandas
+from pandarallel import pandarallel
 from transformers import AddedToken, AutoTokenizer
 from transformers.tokenization_utils import PreTrainedTokenizer
 
@@ -26,7 +26,7 @@ def main() -> None:
     args = _parse_args_from_argv()
     cpu_count = multiprocessing.cpu_count()
     LOG.info("Preparing to use %s CPU cores...", cpu_count)
-    ParallelPandas.initialize(
+    pandarallel.initialize(
         n_cpu=cpu_count,
         split_factor=4,
         disable_pr_bar=False,
@@ -70,7 +70,7 @@ def main() -> None:
     # used in multiprocessing mode, and pandarallel deadlocks.
     df = df.p_apply(
         lambda x: _process_training_example(tokenizer, x),
-        axis=1,
+        #axis=1,
         executor="threads",
     )
 
@@ -82,7 +82,7 @@ def main() -> None:
     LOG.info("Done! Trimming out any examples longer than %s tokens...",
              args.max_length)
 
-    df = df.loc[df["input_ids"].map(len) <= args.max_length]
+    df = df.loc[df["input_ids"].parallel_map(len) <= args.max_length]
 
     LOG.info("Done! Converting into an Apache Arrow table...")
 
